@@ -1,4 +1,6 @@
-# devRelay-demo — Blog → Social Converter
+# GenKit — Blog → Social Converter
+
+> 모노레포 위치: `GenKit/` (원 `devRelay-demo`). 루트 개요는 `../AGENTS.md`.
 
 > A Next.js + Genkit application that lets users select an RSS blog article and convert it to SNS content (LinkedIn, X/Twitter, Instagram cardNews + caption, Reminder). Features paginated feed listing, category filtering, dark/light mode, and per-platform output selection.
 
