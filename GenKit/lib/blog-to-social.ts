@@ -1,5 +1,5 @@
 import { z } from 'genkit';
-import { ai, defaultModel } from './ai.ts';
+import { ai, defaultModel, DEFAULT_MODEL } from './ai.ts';
 import { fetchArticle, type FeedArticle } from './feed.ts';
 import {
   ArticleInfoSchema,
@@ -8,6 +8,7 @@ import {
   PartialSocialOutputSchema,
   type PlatformId,
 } from './schema.ts';
+import { estimateCostUsd, normalizeUsage, type TokenUsage } from './measure.ts';
 
 export const BlogToSocialInputSchema = z.object({
   blogUrl: z.string().min(1).describe('RSS 피드를 제공하는 블로그 URL'),
@@ -85,6 +86,21 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** 비교 하네스가 읽는 측정 블록. 단가표는 lib/measure.ts에서 공유한다. */
+export const MeasurementSchema = z.object({
+  model: z.string(),
+  latencyMs: z.number(),
+  attempts: z.number(),
+  usage: z.object({
+    promptTokens: z.number(),
+    completionTokens: z.number(),
+    totalTokens: z.number(),
+  }),
+  costUsd: z.number().nullable(),
+});
+
+export type Measurement = z.infer<typeof MeasurementSchema>;
+
 async function generateWithRetry(prompt: string, platforms: readonly PlatformId[]) {
   let lastError: unknown;
 
@@ -93,11 +109,12 @@ async function generateWithRetry(prompt: string, platforms: readonly PlatformId[
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      return await ai.generate({
+      const response = await ai.generate({
         model: defaultModel,
         prompt,
         output: { schema: outputSchema },
       });
+      return { response, attempts: attempt };
     } catch (error) {
       lastError = error;
 
@@ -129,6 +146,7 @@ export const convertBlogFlow = ai.defineFlow(
       article: ArticleInfoSchema,
       social: PartialSocialOutputSchema,
       platforms: z.array(z.enum(['linkedin', 'remember', 'twitter', 'instagram'])),
+      measurement: MeasurementSchema,
     }),
   },
   async ({ blogUrl, articleUrl, platforms: requested }) => {
@@ -142,14 +160,27 @@ export const convertBlogFlow = ai.defineFlow(
       );
     }
 
-    const { output } = await generateWithRetry(
+    // 재시도·백오프를 포함한 전체 소요를 잰다. 시도 횟수도 함께 기록한다.
+    const startedAt = Date.now();
+    const { response, attempts } = await generateWithRetry(
       buildPrompt(article.title, trimForPrompt(article.content), platforms),
       platforms,
     );
+    const latencyMs = Date.now() - startedAt;
 
+    const { output } = response;
     if (!output) {
       throw new Error('모델이 스키마에 맞는 출력을 반환하지 않았습니다.');
     }
+
+    const usage: TokenUsage = normalizeUsage(response.usage);
+    const measurement: Measurement = {
+      model: DEFAULT_MODEL,
+      latencyMs,
+      attempts,
+      usage,
+      costUsd: estimateCostUsd(DEFAULT_MODEL, usage),
+    };
 
     return {
       article: {
@@ -159,6 +190,7 @@ export const convertBlogFlow = ai.defineFlow(
       },
       social: output,
       platforms,
+      measurement,
     };
   },
 );

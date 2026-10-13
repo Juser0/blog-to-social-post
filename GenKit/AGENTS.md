@@ -37,19 +37,66 @@ pnpm dev            # or: pnpm dlx next dev  (defaults to http://localhost:3000)
 .
 ├── app/                # Next.js app router (pages & API routes)
 │   ├── api/articles/route.ts    # Paginated RSS feed listing (10 per page)
-│   ├── api/convert/route.ts     # Genkit flow: list → select → convert → results
+│   ├── api/convert/route.ts     # Genkit flow: list → select → convert → results (+ measurement)
+│   ├── api/chat/route.ts        # 비교용 얇은 어댑터: POST /chat → {output, usage, latencyMs}
 │   ├── ConversionOverlay.tsx    # Processing overlay with step progress
 │   ├── globals.css              # CSS variables, theming, card entrance animations
 │   └── page.tsx                 # Full UI: pagination, category chips, platform toggles, scroll
 ├── lib/                  # Shared logic (no Next.js/app router coupling)
 │   ├── ai.ts           # Genkit config: gemini-3.8-flash + OpenRouter compatibility
 │   ├── feed.ts         # RSS parsing, article extraction, category handling
-│   ├── blog-to-social.ts  # Genkit flow with dynamic platform schemas
+│   ├── blog-to-social.ts  # Genkit flow with dynamic platform schemas (+ measurement)
+│   ├── measure.ts      # 측정 요소: usage 정규화, 비용 추정, p50/p95, JSONL 기록 (genkit 무의존)
 │   ├── schema.ts       # Zod schemas (FeedArticle, ArticleInfo, ConvertResponse)
 │   └── platforms.ts    # Platform constants — moved from schema to avoid grpc build break
+├── measurements/       # JSONL 측정 로그 (git 무시, 로컬 분석용)
 ├── package.json        # Dependencies: @genkit-ai/compat-oai 1.42.0, next 16.4.0, react 19
-├── scripts/            # Validation / test scripts
+├── scripts/            # Validation / test scripts (test-measure.ts: 측정 헬퍼 스모크 테스트)
 └── AGENTS.md           # This file
+```
+
+## Benchmark 측정 요소 (비교분석용)
+
+다른 프레임워크 어댑터(Koog/SpringAI/LangChain/...)와 같은 잣대로 비교하기 위한 기준 구현.
+
+### 어댑터 스펙
+
+```
+POST /chat
+Req: { "prompt": string, "model"?: string, "maxTokens"?: number }
+Res: { "output": string,
+       "usage": { "promptTokens": number, "completionTokens": number, "totalTokens": number },
+       "latencyMs": number, "attempts": number,
+       "model": string, "costUsd": number | null }
+```
+
+- 재시도 없이 1회만 호출한다. 하네스가 순수 연결 성능(지연시간 p50/p95, 토큰·비용)을 재야 해서다.
+- `POST /convert` 응답에도 `measurement: {model, latencyMs, attempts, usage, costUsd}`를 포함한다.
+  단, convert는 일시 오류(503/429) 재시도를 하므로 `latencyMs`는 재시도·백오프 포함 총소요다.
+- 모든 측정은 `measurements/genkit.jsonl`에 best-effort로 1줄씩 기록된다 (실패해도 본 요청은 성공 처리).
+
+### 측정 정의 (`lib/measure.ts`, genkit 무의존)
+
+| 요소 | 내용 |
+|---|---|
+| `normalizeUsage` | Genkit(`inputTokens`)·OpenAI(`prompt_tokens`)형 payload를 `TokenUsage`로 정규화. `total`이 없으면 합으로 폴백, 불명이면 0 |
+| `estimateCostUsd` | `$ / 1M tokens` 단가표. `:free`·미등록 모델은 `null`(비용 불명). 기준 모델 확정 시 단가표만 채우면 됨 |
+| `percentile` / `summarizeLatencies` | 하네스용 분포 요약 `{count, min, mean, p50, p95, max}` |
+| `appendMeasurementJsonl` | JSONL 기록. 쓰기 실패는 무시 |
+
+### 미결정 사항 (루트 비교 계획에서 정하면 반영)
+
+- 기준 모델: 전 프레임워크가 붙을 수 있는 하나로 고정 + `temperature: 0`·seed 고정 시 단가표·어댑터에 반영.
+- function calling 비교 여부: 포함 시 `/chat`에 도구 정의·호출 성공률 필드 추가 필요.
+- TTFT(스트리밍): 논스트리밍 어댑터라 측정 불가. 필요 시 스트리밍 어댑터(`/chat/stream`) 추가.
+
+### 실행
+
+```bash
+pnpm test:measure   # 측정 헬퍼 스모크 테스트 (키 불필요)
+curl -X POST http://localhost:3000/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt": "스케줄러 요약 테스트: 오늘 할 일을 3줄로 요약해줘"}'
 ```
 
 ## Key Decisions & Context
@@ -140,6 +187,7 @@ pnpm dlx tsx scripts/test-feed.ts
 
 ## Last Verified
 
-- `pnpm build` ✅ (Turbopack, all routes)
+- `pnpm build` ✅ (Turbopack, all routes — `/api/chat` 포함)
 - `pnpm dlx tsc --noEmit` ✅
+- `pnpm test:measure` ✅ (16 checks, 키 불필요)
 - Browser test: platform toggle, category filter, scroll-to-result, animation stagger, warning when no platform selected

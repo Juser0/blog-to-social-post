@@ -10,6 +10,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:feed": "node --experimental-strip-types scripts/test-feed.ts",
+    "test:measure": "node --experimental-strip-types scripts/test-measure.ts",
     "test:provider": "node --experimental-strip-types scripts/test-provider.mts"
   },
   "dependencies": {

@@ -32,6 +32,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# benchmark measurements (JSONL, 로컬 분석용)
+measurements/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

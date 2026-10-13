@@ -19,6 +19,9 @@
 - API 키 등 비밀은 커밋 금지 (`.env*.local`, `.env`는 루트 `.gitignore`로 무시됨).
 - 비교 기준: 동일 입력(RSS 블로그 글) → 동일 출력(LinkedIn, X, Instagram cardNews+caption, Reminder),
   프롬프트 정의 편의성, 구조화 출력, 스트리밍, 토큰/비용, RSS 연동 편의성.
+- 기준 어댑터: GenKit이 `POST /chat → {output, usage, latencyMs, attempts, model, costUsd}` 참조 구현 제공
+  (스펙·측정 정의는 `GenKit/AGENTS.md`의 "Benchmark 측정 요소" 절). 타 프레임워크 어댑터도 동일 응답 형태를 맞춘다.
+- 미결정: 기준 모델 고정(전부 접근 가능 + temperature 0·seed 고정), function calling 비교 여부. 정해지면 단가표·어댑터에 반영.
 
 ## GenKit 실행 (현재 유일한 동작 구현)
 

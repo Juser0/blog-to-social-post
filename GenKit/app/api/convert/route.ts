@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { convertBlogFlow, BlogToSocialInputSchema } from '@/lib/blog-to-social';
+import { appendMeasurementJsonl } from '@/lib/measure';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -30,6 +31,15 @@ export async function POST(request: Request) {
   try {
     const result = await convertBlogFlow(parsed.data);
 
+    appendMeasurementJsonl({
+      kind: 'convert',
+      at: new Date().toISOString(),
+      blogUrl: parsed.data.blogUrl,
+      platforms: result.platforms,
+      article: result.article,
+      ...result.measurement,
+    });
+
     return NextResponse.json({
       article: {
         title: result.article.title,
@@ -38,6 +48,7 @@ export async function POST(request: Request) {
       },
       social: result.social,
       platforms: result.platforms,
+      measurement: result.measurement,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : '알 수 없는 오류';
