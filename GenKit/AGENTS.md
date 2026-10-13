@@ -51,7 +51,7 @@ pnpm dev            # or: pnpm dlx next dev  (defaults to http://localhost:3000)
 │   └── platforms.ts    # Platform constants — moved from schema to avoid grpc build break
 ├── measurements/       # JSONL 측정 로그 (git 무시, 로컬 분석용)
 ├── package.json        # Dependencies: @genkit-ai/compat-oai 1.42.0, next 16.4.0, react 19
-├── scripts/            # Validation / test scripts (test-measure.ts: 측정 헬퍼 스모크 테스트)
+├── scripts/            # Validation / test scripts (test-measure.ts: 측정 헬퍼 스모크 테스트, measure-report.ts: JSONL 집계→요약+CSV)
 └── AGENTS.md           # This file
 ```
 
@@ -97,7 +97,14 @@ pnpm test:measure   # 측정 헬퍼 스모크 테스트 (키 불필요)
 curl -X POST http://localhost:3000/api/chat \
   -H 'Content-Type: application/json' \
   -d '{"prompt": "스케줄러 요약 테스트: 오늘 할 일을 3줄로 요약해줘"}'
+pnpm measure:report          # measurements/genkit.jsonl 집계 → 요약 출력 + report.csv 저장
+pnpm measure:report --kind=convert  # convert만 집계
 ```
+
+### 실측 예 (2026-10-13, `:free` 모델)
+
+- `/chat` 58자 프롬프트: `latencyMs=23266`, `usage={44, 994, 1038}`, `costUsd=0`, 클라이언트 체감 23.4s (서버 측정이므로 네트워크 제외 순수 연결+생성 시간)
+- 주의: `maxTokens: 256`을 줘도 completion 994 토큰이 반환됨 — compat 플러그인/무료 모델이 상한을 무시할 수 있다. 하네스 설계 시 출력 길이 통제가 필요하면 프롬프트 지시로 보완.
 
 ## Key Decisions & Context
 
