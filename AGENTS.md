@@ -11,7 +11,7 @@
 | `SpringAI/` | Java + Spring AI (JVM/Maven 또는 Gradle, pnpm 대상 아님) | 미구현 |
 | `LangChain/` | LangChain (Python 또는 LangChain.js — 런타임 미정) | 미구현 |
 | `TanstackAI/` | TanStack 기반 (스택 정의 필요) | 미구현 |
-| `MastralAI/` | Mistral AI vs Mastra — 대상 확정 필요 | 미구현 |
+| `MastraAI/` | TypeScript + Mastra (Agent/Tool/Workflow) | 미구현 |
 
 ## 공통 규칙
 
