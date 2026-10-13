@@ -4,7 +4,8 @@ Write Social Network Service(SNS) Article based Blog Article.
 동일 기능을 AI 프레임워크별로 구현해 비교 검증하는 모노레포 (상세: [`AGENTS.md`](./AGENTS.md)).
 
 - [`GenKit/`](./GenKit/README.md) — Next.js + Genkit (동작 검증됨)
-- 변형 예정: [`Koog/`](./Koog/README.md) · [`SpringAI/`](./SpringAI/README.md) · [`LangChain/`](./LangChain/README.md) · [`TanstackAI/`](./TanstackAI/README.md) · [`MastraAI/`](./MastraAI/README.md)
+- [`LangChain/`](./LangChain/README.md) — Next.js + LangChain.js (동작 검증됨, 연결부만 교체)
+- 변형 예정: [`Koog/`](./Koog/README.md) · [`SpringAI/`](./SpringAI/README.md) · [`TanstackAI/`](./TanstackAI/README.md) · [`MastraAI/`](./MastraAI/README.md)
 
 ## 측정 방식
 

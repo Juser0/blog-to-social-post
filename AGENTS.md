@@ -9,7 +9,7 @@
 | `GenKit/` | Next.js + Genkit 구현 (원본) | 동작 검증됨 — 상세는 `GenKit/AGENTS.md` |
 | `Koog/` | Kotlin + JetBrains Koog (JVM/Gradle, pnpm 대상 아님) | 미구현 |
 | `SpringAI/` | Java + Spring AI (JVM/Maven 또는 Gradle, pnpm 대상 아님) | 미구현 |
-| `LangChain/` | LangChain (Python 또는 LangChain.js — 런타임 미정) | 미구현 |
+| `LangChain/` | Next.js + LangChain.js (GenKit과 스택 동일, 연결부만 교체) | 구현됨 — 상세는 `LangChain/AGENTS.md` |
 | `TanstackAI/` | TanStack 기반 (스택 정의 필요) | 미구현 |
 | `MastraAI/` | TypeScript + Mastra (Agent/Tool/Workflow) | 미구현 |
 
@@ -23,11 +23,11 @@
   (스펙·측정 정의는 `GenKit/AGENTS.md`의 "Benchmark 측정 요소" 절). 타 프레임워크 어댑터도 동일 응답 형태를 맞춘다.
 - 미결정: 기준 모델 고정(전부 접근 가능 + temperature 0·seed 고정), function calling 비교 여부. 정해지면 단가표·어댑터에 반영.
 
-## GenKit 실행 (현재 유일한 동작 구현)
+## 동작 구현 실행 (GenKit / LangChain)
 
 ```bash
-cd GenKit
+cd GenKit    # 또는 LangChain
 pnpm install
 pnpm typecheck
-pnpm dev
+pnpm dev     # 동시 실행 시 한쪽은 pnpm dev --port 3100
 ```
