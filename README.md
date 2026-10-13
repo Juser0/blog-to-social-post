@@ -1,10 +1,10 @@
 # blog-to-social-post
 Write Social Network Service(SNS) Article based Blog Article.
 
-동일 기능을 AI 프레임워크별로 구현해 비교 검증하는 모노레포 (상세: `AGENTS.md`).
+동일 기능을 AI 프레임워크별로 구현해 비교 검증하는 모노레포 (상세: [`AGENTS.md`](./AGENTS.md)).
 
-- `GenKit/` — Next.js + Genkit (동작 검증됨)
-- `Koog/` · `SpringAI/` · `LangChain/` · `TanstackAI/` · `MastralAI/` — 변형 예정
+- [`GenKit/`](./GenKit/README.md) — Next.js + Genkit (동작 검증됨)
+- 변형 예정: [`Koog/`](./Koog/README.md) · [`SpringAI/`](./SpringAI/README.md) · [`LangChain/`](./LangChain/README.md) · [`TanstackAI/`](./TanstackAI/README.md) · [`MastralAI/`](./MastralAI/README.md)
 
 ## 측정 방식
 
@@ -12,7 +12,7 @@ Write Social Network Service(SNS) Article based Blog Article.
 공통 하네스가 같은 프롬프트를 쏴서 측정한다.
 
 1. **어댑터**: `POST /chat {prompt, model?, maxTokens?}` → `{output, usage, latencyMs, attempts, model, costUsd}`.
-   재시도 없이 1회 호출이 원칙 (순수 연결 성능 측정). 기준 구현: `GenKit/` (스펙 상세는 `GenKit/AGENTS.md`).
+   재시도 없이 1회 호출이 원칙 (순수 연결 성능 측정). 기준 구현: `GenKit/` (스펙 상세는 [`GenKit/AGENTS.md`](./GenKit/AGENTS.md)).
 2. **쏘기**: `cd GenKit && pnpm dev` 후 `/api/chat` 호출. 매 호출은 `measurements/genkit.jsonl`에 1줄씩 기록된다.
 3. **집계**: `pnpm measure:report [--kind=chat|convert]` → 지연시간 분포 + 토큰합 + 비용합 출력, `report.csv` 저장.
 
