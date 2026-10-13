@@ -64,7 +64,7 @@ function main() {
   const promptSum = rows.reduce((acc, r) => acc + num(r.usage?.promptTokens), 0);
   const completionSum = rows.reduce((acc, r) => acc + num(r.usage?.completionTokens), 0);
   const costs = rows.map((r) => (typeof r.costUsd === 'number' ? r.costUsd : null));
-  const costSum = costs.every((c) => c === null) ? null : costs.reduce((acc, c) => acc + (c ?? 0), 0);
+  const costSum = costs.every((c) => c === null) ? null : costs.reduce<number>((acc, c) => acc + (c ?? 0), 0);
 
   console.log(`행 수: ${summary.count} (kinds: ${[...new Set(rows.map((r) => String(r.kind)))].join(',')})`);
   console.log(
