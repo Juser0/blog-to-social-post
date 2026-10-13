@@ -2,6 +2,7 @@
   "name": "blog-to-social",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@12.11.2",
   "type": "module",
   "scripts": {
     "dev": "next dev",

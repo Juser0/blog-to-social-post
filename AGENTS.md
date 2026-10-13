@@ -8,26 +8,26 @@
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Type-check
-npx tsc --noEmit
+pnpm dlx tsc --noEmit
 
 # Build (Turbopack)
-npm run build          # or: npx next build
+pnpm build          # or: pnpm dlx next build
 
 # Run development server
-npm run dev            # or: npx next dev  (defaults to http://localhost:3000)
+pnpm dev            # or: pnpm dlx next dev  (defaults to http://localhost:3000)
 ```
 
 ## Available Scripts
 
 | Script | Description |
 |---|---|
-| `npm run build` | Turbopack build (outputs to `.next/`) |
-| `npx tsc --noEmit` | TypeScript check only |
-| `npm run dev` | Start dev server at `http://localhost:3000` |
-| `npm test` | Run tests (if any) |
+| `pnpm build` | Turbopack build (outputs to `.next/`) |
+| `pnpm dlx tsc --noEmit` | TypeScript check only |
+| `pnpm dev` | Start dev server at `http://localhost:3000` |
+| `pnpm test` | Run tests (if any) |
 
 ## Project Structure
 
@@ -71,21 +71,21 @@ npm run dev            # or: npx next dev  (defaults to http://localhost:3000)
 
 ### Type Check
 ```bash
-npx tsc --noEmit
+pnpm dlx tsc --noEmit
 ```
 
 ### Build
 ```bash
-npm run build          # Turbopack
+pnpm build          # Turbopack
 # or
-npx next build
+pnpm dlx next build
 ```
 
 ### Dev Server
 ```bash
-npm run dev            # http://localhost:3000
+pnpm dev            # http://localhost:3000
 # or
-npx next dev -p 3000
+pnpm dlx next dev -p 3000
 ```
 
 ### Git
@@ -100,7 +100,7 @@ git commit -m "description"
 
 ### Test Feed Validation (existing script)
 ```bash
-npx tsx scripts/test-feed.ts
+pnpm dlx tsx scripts/test-feed.ts
 ```
 
 ## Code Conventions
@@ -132,12 +132,12 @@ npx tsx scripts/test-feed.ts
 ## Known Gotchas
 
 - **Build break from schema import**: Importing runtime values (not types) from `lib/schema.ts` into client components pulls in `genkit` → `grpc` → Node builtins, causing Turbopack "Can't resolve 'async_hooks'/'fs'/'dns'" errors. Always import as `type` from `lib/platforms.ts` for values, or keep schema imports as type-only.
-- **Google-genai unused**: `@genkit-ai/google-genai` is still in `package.json` deps but no longer imported. Uninstall if desired: `npm uninstall @genkit-ai/google-genai`.
+- **Google-genai unused**: `@genkit-ai/google-genai` is still in `package.json` deps but no longer imported. Uninstall if desired: `pnpm remove @genkit-ai/google-genai`.
 - **Platform validation**: Convert button is disabled when `platforms.length === 0`. Selecting "전체 선택" re-checks all 4.
 - **Instagram cardNews + caption**: Always a pair; cannot select one without the other.
 
 ## Last Verified
 
-- `npm run build` ✅ (Turbopack, all routes)
-- `npx tsc --noEmit` ✅
+- `pnpm build` ✅ (Turbopack, all routes)
+- `pnpm dlx tsc --noEmit` ✅
 - Browser test: platform toggle, category filter, scroll-to-result, animation stagger, warning when no platform selected

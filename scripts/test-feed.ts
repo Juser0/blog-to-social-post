@@ -7,7 +7,7 @@ const targets = process.argv.slice(2);
 
 async function main() {
   if (targets.length === 0) {
-    console.error('사용법: npm run test:feed -- https://yourblog.com');
+    console.error('사용법: pnpm test:feed -- https://yourblog.com');
     process.exitCode = 1;
     return;
   }
