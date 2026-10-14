@@ -6,7 +6,15 @@ import { PLATFORM_IDS, type PlatformId } from '@/lib/platforms';
 // 타입만 불러오므로 런타임 번들에 서버 코드가 딸려 오지 않습니다.
 import type { ConvertResponse } from '@/lib/schema';
 
-type Result = ConvertResponse;
+type Result = ConvertResponse & { link?: string };
+
+/**
+ * 디버그 패널(원본 응답 보기·연결 표시) 노출 여부.
+ * NEXT_PUBLIC_SHOW_DEBUG=true/false가 우선. 생략 시 개발(dev) 표시·배포(prod) 숨김.
+ */
+const SHOW_DEBUG_PANEL =
+  process.env.NEXT_PUBLIC_SHOW_DEBUG === 'true' ||
+  (process.env.NEXT_PUBLIC_SHOW_DEBUG !== 'false' && process.env.NODE_ENV !== 'production');
 
 interface ArticleSummary {
   title: string;
@@ -564,6 +572,7 @@ export default function Home() {
             <span className="source-label">
               {result.article.contentSource === 'page' ? '원문 페이지에서 읽음' : 'RSS에서 읽음'}
             </span>
+            {SHOW_DEBUG_PANEL && <span className="source-label">연결: {result.link ?? '?'}</span>}
             {result.article.link ? (
               <a className="source-title" href={result.article.link} target="_blank" rel="noreferrer">
                 {result.article.title}
@@ -632,10 +641,12 @@ export default function Home() {
             )}
           </div>
 
-          <details className="raw">
-            <summary>원본 응답 보기 (문제 생기면 이 내용을 복사해서 알려주세요)</summary>
-            <pre>{JSON.stringify(result, null, 2)}</pre>
-          </details>
+          {SHOW_DEBUG_PANEL && (
+            <details className="raw">
+              <summary>원본 응답 보기 (문제 생기면 이 내용을 복사해서 알려주세요)</summary>
+              <pre>{JSON.stringify(result, null, 2)}</pre>
+            </details>
+          )}
         </ResultBoundary>
       )}
     </main>

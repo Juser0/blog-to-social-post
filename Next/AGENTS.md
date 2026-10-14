@@ -40,6 +40,8 @@ link=langchain pnpm dev           # env 직접 주입도 가능
 - 부팅 로그: `scripts/dev.mjs`가 `[dev] link=...`를 찍고, `lib/adapters/index.ts`가 로드될 때
   `[ai/boot] link=... model=... key=ok|MISSING`을 찍는다. 어댑터 싱글턴도 이때 1회 생성된다.
 - 측정 로그는 link별로 분리된다: `measurements/genkit.jsonl`, `measurements/langchain.jsonl`.
+- 디버그 패널: 결과 화면의 "연결: genkit|langchain" 표시와 "원본 응답 보기"는
+  `NEXT_PUBLIC_SHOW_DEBUG=true/false`가 우선, 생략 시 dev 표시·prod(`next build/start`) 숨김.
 
 ## Available Scripts
 

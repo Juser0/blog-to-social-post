@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       social: result.social,
       platforms: result.platforms,
       measurement: result.measurement,
+      link: LINK,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : '알 수 없는 오류';
