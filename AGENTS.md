@@ -6,10 +6,9 @@
 
 | 폴더 | 내용 | 상태 |
 |---|---|---|
-| `GenKit/` | Next.js + Genkit 구현 (원본) | 동작 검증됨 — 상세는 `GenKit/AGENTS.md` |
+| `Next/` | Next.js 통합 구현. 부팅 시 `link=genkit\|langchain`으로 AI 연결 선택 (구 `GenKit/`, 이력 유지) | 동작 검증됨 — 상세는 `Next/AGENTS.md` |
 | `Koog/` | Kotlin + JetBrains Koog (JVM/Gradle, pnpm 대상 아님) | 미구현 |
 | `SpringAI/` | Java + Spring AI (JVM/Maven 또는 Gradle, pnpm 대상 아님) | 미구현 |
-| `LangChain/` | Next.js + LangChain.js (GenKit과 스택 동일, 연결부만 교체) | 구현됨 — 상세는 `LangChain/AGENTS.md` |
 | `TanstackAI/` | TanStack 기반 (스택 정의 필요) | 미구현 |
 | `MastraAI/` | TypeScript + Mastra (Agent/Tool/Workflow) | 미구현 |
 
@@ -19,15 +18,16 @@
 - API 키 등 비밀은 커밋 금지 (`.env*.local`, `.env`는 루트 `.gitignore`로 무시됨).
 - 비교 기준: 동일 입력(RSS 블로그 글) → 동일 출력(LinkedIn, X, Instagram cardNews+caption, Reminder),
   프롬프트 정의 편의성, 구조화 출력, 스트리밍, 토큰/비용, RSS 연동 편의성.
-- 기준 어댑터: GenKit이 `POST /chat → {output, usage, latencyMs, attempts, model, costUsd}` 참조 구현 제공
-  (스펙·측정 정의는 `GenKit/AGENTS.md`의 "Benchmark 측정 요소" 절). 타 프레임워크 어댑터도 동일 응답 형태를 맞춘다.
+- 기준 어댑터: Next가 `POST /chat → {output, usage, latencyMs, attempts, model, costUsd, link}` 참조 구현 제공
+  (스펙·측정 정의는 `Next/AGENTS.md`의 "Benchmark 측정 요소" 절). 타 프레임워크 어댑터도 동일 응답 형태를 맞춘다.
 - 미결정: 기준 모델 고정(전부 접근 가능 + temperature 0·seed 고정), function calling 비교 여부. 정해지면 단가표·어댑터에 반영.
 
-## 동작 구현 실행 (GenKit / LangChain)
+## 동작 구현 실행 (Next)
 
 ```bash
-cd GenKit    # 또는 LangChain
+cd Next
 pnpm install
 pnpm typecheck
-pnpm dev     # 동시 실행 시 한쪽은 pnpm dev --port 3100
+pnpm dev link=genkit                # 기본 (http://localhost:3000)
+pnpm dev link=langchain --port 3100  # 동시 실행 시
 ```
