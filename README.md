@@ -4,7 +4,8 @@ Write Social Network Service(SNS) Article based Blog Article.
 동일 기능을 AI 프레임워크별로 구현해 비교 검증하는 모노레포 (상세: [`AGENTS.md`](./AGENTS.md)).
 
 - [`Next/`](./Next/README.md) — Next.js 통합 구현, `pnpm dev link=genkit|langchain|mastra|tanstack`으로 AI 연결 선택 (동작 검증됨)
-- 변형 예정: [`Koog/`](./Koog/README.md) · [`SpringAI/`](./SpringAI/README.md)
+- [`SpringAI/`](./SpringAI/README.md) — Kotlin + Spring AI 구현 (동작 검증됨, JVM/Gradle, pnpm 대상 아님)
+- [`Koog/`](./Koog/README.md) — Kotlin + JetBrains Koog 구현 (동작 검증됨, JVM/Gradle, pnpm 대상 아님)
 
 ## 구조 다이어그램
 

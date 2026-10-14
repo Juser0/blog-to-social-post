@@ -7,8 +7,8 @@
 | 폴더 | 내용 | 상태 |
 |---|---|---|
 | `Next/` | Next.js 통합 구현. 부팅 시 `link=genkit\|langchain\|mastra\|tanstack`으로 AI 연결 선택 (구 `GenKit/`, 이력 유지) | 동작 검증됨 — 상세는 `Next/AGENTS.md` |
-| `Koog/` | Kotlin + JetBrains Koog (JVM/Gradle, pnpm 대상 아님) | 미구현 |
-| `SpringAI/` | Java + Spring AI (JVM/Maven 또는 Gradle, pnpm 대상 아님) | 미구현 |
+| `Koog/` | Kotlin + JetBrains Koog (JVM/Gradle, pnpm 대상 아님) | 구현됨 — 상세는 `Koog/AGENTS.md` |
+| `SpringAI/` | Kotlin + Spring AI (Spring Boot/Gradle, pnpm 대상 아님) | 구현됨 — 상세는 `SpringAI/AGENTS.md` |
 
 ## 공통 규칙
 

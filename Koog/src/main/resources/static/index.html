@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blog → Social (Koog 테스트 UI)</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 760px; margin: 24px auto; padding: 0 16px; }
+  .row { display: flex; gap: 8px; margin-bottom: 12px; }
+  input[type=text] { flex: 1; padding: 8px; }
+  button { padding: 8px 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  .error { color: #b00; border: 1px solid #b00; padding: 8px; margin: 12px 0; white-space: pre-wrap; }
+  li { margin: 6px 0; }
+  .card { border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin: 10px 0; }
+  .card h3 { margin: 0 0 6px; font-size: 14px; }
+  .meta { color: #666; font-size: 12px; }
+  pre { background: #f4f4f4; padding: 8px; overflow: auto; font-size: 12px; }
+  label { margin-right: 10px; }
+</style>
+</head>
+<body>
+<h1>Blog → Social <span class="meta">link: koog · 테스트용</span></h1>
+<div class="row">
+  <input id="blogUrl" type="text" value="justuser.tistory.com" />
+  <button id="loadBtn" onclick="loadList()">목록 불러오기</button>
+</div>
+<div id="platforms">
+  <label><input type="checkbox" value="linkedin" checked /> LinkedIn</label>
+  <label><input type="checkbox" value="remember" checked /> 리마인더</label>
+  <label><input type="checkbox" value="twitter" checked /> X</label>
+  <label><input type="checkbox" value="instagram" checked /> Instagram</label>
+</div>
+<div id="error"></div>
+<ul id="list"></ul>
+<div id="result"></div>
+
+<script>
+const errBox = document.getElementById('error');
+function showError(m) { errBox.innerHTML = m ? `<div class="error">${m}</div>` : ''; }
+function platforms() {
+  return [...document.querySelectorAll('#platforms input:checked')].map(e => e.value);
+}
+
+async function loadList() {
+  showError(''); document.getElementById('result').innerHTML = '';
+  const blogUrl = document.getElementById('blogUrl').value.trim();
+  if (!blogUrl) return;
+  try {
+    const res = await fetch('/api/articles', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ blogUrl, page: 1 }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.status);
+    document.getElementById('list').innerHTML = data.articles.map(a =>
+      `<li>${a.title || '(제목 없음)'} <button onclick="convert('${a.link.replace(/'/g, '')}', this)">⚡ 변환하기</button></li>`
+    ).join('');
+  } catch (e) { showError(String(e.message || e)); }
+}
+
+async function convert(articleUrl, btn) {
+  showError(''); document.getElementById('result').innerHTML = '';
+  const blogUrl = document.getElementById('blogUrl').value.trim();
+  const ps = platforms();
+  if (ps.length === 0) { showError('플랫폼을 1개 이상 고르세요.'); return; }
+  btn.disabled = true; btn.textContent = '변환 중... (30~60초)';
+  try {
+    const res = await fetch('/api/convert', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ blogUrl, articleUrl, platforms: ps }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || res.status);
+    const cards = [];
+    if (typeof data.social.linkedin === 'string') cards.push(card('LinkedIn', data.social.linkedin));
+    if (typeof data.social.remember === 'string') cards.push(card('리마인더', data.social.remember));
+    if (typeof data.social.twitter === 'string') cards.push(card('X', data.social.twitter));
+    const ig = data.social.instagram;
+    if (ig && Array.isArray(ig.cardNews)) cards.push(card('Instagram 카드뉴스', ig.cardNews.join('\n\n')));
+    if (ig && typeof ig.caption === 'string') cards.push(card('Instagram 캡션', ig.caption));
+    document.getElementById('result').innerHTML =
+      `<p class="meta">${data.article.title} · ${data.measurement.latencyMs}ms · ${data.measurement.attempts}회</p>` +
+      cards.join('') +
+      `<details><summary>원본 응답 보기</summary><pre>${JSON.stringify(data, null, 2)}</pre></details>`;
+  } catch (e) { showError(String(e.message || e)); }
+  finally { btn.disabled = false; btn.textContent = '⚡ 변환하기'; }
+}
+
+function card(title, text) {
+  const esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return `<div class="card"><h3>${title} <span class="meta">${text.length}자</span></h3><p>${esc}</p></div>`;
+}
+</script>
+</body>
+</html>

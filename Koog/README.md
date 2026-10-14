@@ -1,8 +1,9 @@
-# Koog 변형 (예정)
+# Koog 변형
 
-Kotlin + JetBrains Koog 기반 Blog → Social 변환 구현 자리.
+Kotlin + Ktor + JetBrains Koog 기반 Blog → Social 변환 구현.
 
-- 상태: 미구현 (폴더만 생성됨)
-- 런타임: JVM / Gradle 프로젝트로, pnpm 대상이 아님
-- 목표: `GenKit/` 구현과 동일한 입력(RSS 블로그 글) → 동일한 출력(LinkedIn, X, Instagram cardNews+caption, Reminder) 제공
-- 비교 포인트: 프롬프트 정의 방식, 구조화 출력, 스트리밍, 토큰/비용, RSS 연동 편의성
+- 상태: 구현됨 (동작 검증됨)
+- 실행: `OPENROUTER_API_KEY=sk-or-... ./gradlew run` → http://localhost:8081
+- 상세 문서: [`AGENTS.md`](./AGENTS.md)
+- 목표: `Next/` 구현과 동일한 입력(RSS 블로그 글) → 동일한 출력(LinkedIn, X, Instagram cardNews+caption, Reminder) 제공
+- 비교 포인트: PromptExecutor 사용성, 구조화 출력(수동/네이티브), 토큰/비용, RSS 연동 편의성

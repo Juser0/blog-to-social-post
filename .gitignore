@@ -38,3 +38,7 @@ measurements/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# gradle (JVM 폴더용, 래퍼 jar·스크립트는 커밋함)
+.gradle/
+.kotlin/

@@ -1,0 +1,25 @@
+server:
+  # Spring 기본값. Next(3000/3100)와 동시에 띄울 때 겹치지 않는다. 바꾸려면 --server.port=3101
+  port: 8080
+
+openrouter:
+  # https://openrouter.ai/keys 에서 발급. 환경 변수 OPENROUTER_API_KEY 권장
+  api-key: ${OPENROUTER_API_KEY:}
+  base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+  # 생략하면 nvidia/nemotron-3-ultra-550b-a55b:free 사용
+  model: ${OPENROUTER_MODEL:nvidia/nemotron-3-ultra-550b-a55b:free}
+
+spring:
+  application:
+    name: blog-to-social-springai
+  # 직접 만든 chatModel bean만 쓴다. 나머지 OpenAI系 auto-config는 키를 요구하며 뜨므로 제외.
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
