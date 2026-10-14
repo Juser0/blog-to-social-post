@@ -133,6 +133,18 @@ pnpm measure:report --kind=convert  # convert만 집계
 LINK=langchain pnpm measure:report   # langchain 로그 집계
 ```
 
+### 링크 비교 하네스 (CLI 전용, UI 미노출)
+
+```bash
+pnpm measure:benchmark                              # 4 link × 3라운드 (고정 프롬프트)
+pnpm measure:benchmark --rounds=5 --links=mastra,tanstack
+pnpm measure:benchmark --skip-convert               # chat만
+```
+
+- 고정 chat 프롬프트 3개 + 고정 convert 지문(remember)으로 각 link를 라운드로빈 측정한다.
+  어댑터를 직접 호출하므로 서버 기동이 필요 없고, 결과는 웹에 노출되지 않는다.
+- 결과는 `measurements/benchmark-<timestamp>.json` + 콘솔 요약표(p50/p95·토큰합·실패 내역).
+
 ### 실측 예 (2026-10-13, `:free` 모델)
 
 - `/chat` 58자 프롬프트: `latencyMs=23266`, `usage={44, 994, 1038}`, `costUsd=0`, 클라이언트 체감 23.4s (서버 측정이므로 네트워크 제외 순수 연결+생성 시간)

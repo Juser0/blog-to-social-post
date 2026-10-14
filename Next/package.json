@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test:feed": "node --experimental-strip-types scripts/test-feed.ts",
     "test:measure": "node --experimental-strip-types scripts/test-measure.ts",
+    "measure:benchmark": "node --experimental-strip-types scripts/benchmark.ts",
     "measure:report": "node --experimental-strip-types scripts/measure-report.ts",
     "test:provider": "node --experimental-strip-types scripts/test-provider.mts"
   },

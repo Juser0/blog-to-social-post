@@ -3,8 +3,31 @@ Write Social Network Service(SNS) Article based Blog Article.
 
 동일 기능을 AI 프레임워크별로 구현해 비교 검증하는 모노레포 (상세: [`AGENTS.md`](./AGENTS.md)).
 
-- [`Next/`](./Next/README.md) — Next.js 통합 구현, `pnpm dev link=genkit|langchain`으로 AI 연결 선택 (동작 검증됨)
+- [`Next/`](./Next/README.md) — Next.js 통합 구현, `pnpm dev link=genkit|langchain|mastra|tanstack`으로 AI 연결 선택 (동작 검증됨)
 - 변형 예정: [`Koog/`](./Koog/README.md) · [`SpringAI/`](./SpringAI/README.md)
+
+## 구조 다이어그램
+
+```mermaid
+flowchart LR
+    subgraph HARNESS["비교 하네스 (CLI 전용 · UI 미노출)"]
+        B["pnpm measure:benchmark<br/>--rounds --links"]
+    end
+    subgraph ADAPTERS["Next/lib/adapters (ChatAdapter 계약)"]
+        direction TB
+        A1["genkit"]
+        A2["langchain"]
+        A3["mastra"]
+        A4["tanstack"]
+    end
+    B -->|"라운드로빈 (시간대 편차 상쇄)"| A1 & A2 & A3 & A4
+    A1 & A2 & A3 & A4 --> OR["OpenRouter<br/>(동일 모델 · 동일 프롬프트)"]
+    B --> OUT["measurements/benchmark-*.json<br/>콘솔 요약표 (p50/p95 · 토큰합)"]
+    subgraph APP["웹 앱 (개별 확인용)"]
+        UI["UI"] --> SEL["부팅 시 link 1개 확정"]
+        SEL --> OR
+    end
+```
 
 ## 측정 방식
 
@@ -13,7 +36,8 @@ Write Social Network Service(SNS) Article based Blog Article.
 
 1. **어댑터**: `POST /chat {prompt, model?, maxTokens?}` → `{output, usage, latencyMs, attempts, model, costUsd}`.
    재시도 없이 1회 호출이 원칙 (순수 연결 성능 측정). 기준 구현: `Next/` (스펙 상세는 [`Next/AGENTS.md`](./Next/AGENTS.md)).
-2. **쏘기**: `cd Next && pnpm dev link=genkit` 후 `/api/chat` 호출. 매 호출은 `measurements/genkit.jsonl`에 1줄씩 기록된다 (`link=langchain`이면 `langchain.jsonl`).
+2. **쏘기**: `cd Next && pnpm dev link=genkit` 후 `/api/chat` 호출. 매 호출은 `measurements/<link>.jsonl`에 1줄씩 기록된다.
+   일괄 비교는 `pnpm measure:benchmark` (서버 기동 불필요, 위 다이어그램 참조).
 3. **집계**: `pnpm measure:report [--kind=chat|convert]` → 지연시간 분포 + 토큰합 + 비용합 출력, `report.csv` 저장.
 
 ## 측정 기준
