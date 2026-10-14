@@ -139,10 +139,14 @@ LINK=langchain pnpm measure:report   # langchain 로그 집계
 pnpm measure:benchmark                              # 4 link × 3라운드 (고정 프롬프트)
 pnpm measure:benchmark --rounds=5 --links=mastra,tanstack
 pnpm measure:benchmark --skip-convert               # chat만
+pnpm measure:benchmark --transport=http --base-url=http://localhost:8080 --links=springai --rounds=3
 ```
 
 - 고정 chat 프롬프트 3개 + 고정 convert 지문(remember)으로 각 link를 라운드로빈 측정한다.
   어댑터를 직접 호출하므로 서버 기동이 필요 없고, 결과는 웹에 노출되지 않는다.
+- `--transport=http`는 JVM 서버(SpringAI :8080, Koog :8081)용. 같은 고정 chat 프롬프트를
+  `/api/chat`으로 쏘고, convert는 실물 글(justuser /44, remember)로 고정해 쏜다.
+- 무료 일일 한도(50회)에 걸리면 429 실패로 기록되고 멈추지 않는다. `--delay-ms`로 호출 간격을 둔다.
 - 결과는 `measurements/benchmark-<timestamp>.json` + 콘솔 요약표(p50/p95·토큰합·실패 내역).
 
 ### 실측 예 (2026-10-13, `:free` 모델)

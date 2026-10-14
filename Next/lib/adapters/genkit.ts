@@ -11,21 +11,30 @@ export const DEFAULT_MODEL = process.env.OPENROUTER_MODEL ?? 'nvidia/nemotron-3-
 
 const PLUGIN_NAME = 'openrouter';
 
-// 부팅 시 1회 연결: 모듈 로드 때 클라이언트를 만든다 (네트워크 I/O 없음).
-export const ai = genkit({
-  plugins: [
-    openAICompatible({
-      name: PLUGIN_NAME,
-      apiKey: process.env.OPENROUTER_API_KEY,
-      baseURL: process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
-      defaultHeaders: {
-        // OpenRouter 대시보드의 앱 귀속용 헤더입니다. 없어도 동작합니다.
-        'HTTP-Referer': 'https://github.com/Juser0/blog-to-social-post',
-        'X-Title': 'Blog to Social (Next/genkit)',
-      },
-    }),
-  ],
-});
+// 부팅 시 1회 연결: 첫 호출 때 클라이언트를 만든다.
+// 모듈 로드 때 만들지 않는 이유: 하네스처럼 .env.local을 뒤늦게 읽는 실행 방식에서
+// import 시점에는 키가 없을 수 있다. 서버에서는 첫 요청 전에 env가 로드되므로 동일하게 동작한다.
+let cachedAi: ReturnType<typeof genkit> | null = null;
+
+function ai(): ReturnType<typeof genkit> {
+  if (!cachedAi) {
+    cachedAi = genkit({
+      plugins: [
+        openAICompatible({
+          name: PLUGIN_NAME,
+          apiKey: process.env.OPENROUTER_API_KEY,
+          baseURL: process.env.OPENROUTER_BASE_URL ?? 'https://openrouter.ai/api/v1',
+          defaultHeaders: {
+            // OpenRouter 대시보드의 앱 귀속용 헤더입니다. 없어도 동작합니다.
+            'HTTP-Referer': 'https://github.com/Juser0/blog-to-social-post',
+            'X-Title': 'Blog to Social (Next/genkit)',
+          },
+        }),
+      ],
+    });
+  }
+  return cachedAi;
+}
 
 const defaultModel = modelRef({ name: `${PLUGIN_NAME}/${DEFAULT_MODEL}` });
 
@@ -38,7 +47,7 @@ export const genkitAdapter: ChatAdapter = {
   model: DEFAULT_MODEL,
 
   async chat(prompt: string, opts: ChatCallOptions): Promise<ChatCallResult> {
-    const response = await ai.generate({
+    const response = await ai().generate({
       model: refFor(opts.modelId),
       prompt,
       config: { maxOutputTokens: opts.maxTokens },
@@ -47,7 +56,7 @@ export const genkitAdapter: ChatAdapter = {
   },
 
   async convertStructured(prompt: string, schema: any, modelId: string): Promise<StructuredCallResult> {
-    const response = await ai.generate({
+    const response = await ai().generate({
       model: refFor(modelId),
       prompt,
       output: { schema },

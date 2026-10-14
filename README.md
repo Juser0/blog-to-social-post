@@ -14,15 +14,22 @@ flowchart LR
     subgraph HARNESS["비교 하네스 (CLI 전용 · UI 미노출)"]
         B["pnpm measure:benchmark<br/>--rounds --links"]
     end
-    subgraph ADAPTERS["Next/lib/adapters (ChatAdapter 계약)"]
+    subgraph ADAPTERS["Next/lib/adapters (직접 호출)"]
         direction TB
         A1["genkit"]
         A2["langchain"]
         A3["mastra"]
         A4["tanstack"]
     end
+    subgraph JVM["JVM 서버 (--transport=http)"]
+        direction TB
+        S1["SpringAI :8080<br/>(Spring AI)"]
+        S2["Koog :8081<br/>(Koog)"]
+    end
     B -->|"라운드로빈 (시간대 편차 상쇄)"| A1 & A2 & A3 & A4
+    B -->|"같은 고정 프롬프트 (HTTP)"| S1 & S2
     A1 & A2 & A3 & A4 --> OR["OpenRouter<br/>(동일 모델 · 동일 프롬프트)"]
+    S1 & S2 --> OR
     B --> OUT["measurements/benchmark-*.json<br/>콘솔 요약표 (p50/p95 · 토큰합)"]
     subgraph APP["웹 앱 (개별 확인용)"]
         UI["UI"] --> SEL["부팅 시 link 1개 확정"]
@@ -42,18 +49,53 @@ flowchart LR
 
 ## 비교 결과 (예비치, 2026-10-14)
 
-동일 모델(`nvidia/nemotron-3-ultra-550b-a55b:free`)·동일 키, 서버 측 `latencyMs` 실측.
+동일 모델(`nvidia/nemotron-3-ultra-550b-a55b:free`)·동일 키, `latencyMs` 실측.
 표본이 적고 무료 티어 편차가 크므로 확정치가 아니라 경향치로 볼 것.
 
-| link | chat latency | convert latency | usage 분해 | 비고 |
-|---|---|---|---|---|
-| genkit | 56,576ms (n=1) | p50 39,170ms (n=7) | 3종 완전 | 구조화 검증 내장, 의존 최중량 |
-| langchain | p50 897ms (n=2) | p50 71,030ms (n=2) | total만 (`:free` 한계) | 가볍고 안정, 출력 미검증 |
-| mastra | 5,110ms (n=1) | 16,370ms (n=1) | 3종 완전 | `maxSteps: 1` 1회 호출, 의존 무거움 |
-| tanstack | 1,089ms (n=1) | 5,746ms (n=1) | 3종 완전 | 가장 빠름, RC 버전·zod v3 변환 필요 |
+### A. chat — 동일 프롬프트 3종 (하네스 고정 세트)
 
+| link | latency | n | 비고 |
+|---|---|---|---|
+| genkit | 56,576ms | 1 (스모크) | 하네스는 env 버그로 0/12 → 수정 후 쿼터 소진으로 재측정 보류 |
+| langchain | p50 1,538ms | 6 | |
+| mastra | p50 3,231ms | 6 | |
+| tanstack | p50 5,004ms | 3 | |
+| springai | 2,224ms | 1 (스모크) | HTTP 모드, 동일 프롬프트 |
+| koog | 1,632ms | 1 (스모크) | HTTP 모드, 동일 프롬프트 |
+
+### B. convert — 실물 글 (justuser.tistory.com/44, remember 중심)
+
+| link | latency | n | 비고 |
+|---|---|---|---|
+| genkit | p50 39,170ms | 7 (서버 로그) | |
+| langchain | 44,796 / 97,264ms | 2 | 편차 큼 |
+| mastra | 16,370ms | 1 | |
+| tanstack | 5,746ms | 1 | |
+| springai | 20,468ms | 1 | |
+| koog | 37,174ms | 1 | 전체 스키마 전송 후 서버에서 필터 |
+
+### C. 토큰·비용·구조화
+
+- usage 3종 완전: genkit, mastra, tanstack, springai, koog.
+  langchain은 `:free` 모델에서 total만 내려 prompt/completion이 0으로 기록된다.
 - 비용은 전부 `costUsd=0` (무료 모델).
-- 확정 비교는 `pnpm measure:benchmark --rounds=10` (프롬프트 고정·라운드로빈) 후 p50/p95으로 판정.
+- 구조화: genkit만 네이티브 검증(response_format). 나머지는 스키마 지시 + 후처리
+  (langchain response_format / mastra structuredOutput / tanstack JSON 스키마 /
+  springai MapOutputConverter / koog 수동 모드).
+
+### 방법론·제약
+
+- 하네스(`pnpm measure:benchmark`): TS 4종은 직접 호출, JVM 2종은 HTTP로 동일 프롬프트·라운드로빈.
+- 2026-10-14 풀매트릭스 도중 무료 일일 한도(50회) 소진 → rounds 2~3 상당수가 429로 실패.
+  위 수치는 성공분만 집계했고, 쿼터 회복 후 `rounds=5` 재측정으로 확정한다.
+- 하네스에서 genkit 어댑터의 import 시점 env 캡처 버그 발견·수정
+  (`.env.local`을 뒤늦게 읽는 실행에서 키를 못 읽음 → 첫 호출 시 lazy 생성으로 변경).
+
+### 결론 (예비)
+
+- 속도: tanstack·koog·springai가 선두권, genkit이 최하. 단 표본이 적어 순번 확정은 보류.
+- 측정 완전성: langchain만 usage 분해 결함. 비용 비교가 목적이면 제외하거나 total 안분 규칙 필요.
+- 제품 경로 후보: tanstack(속도+측정) 또는 mastra(검증+측정+생태계). genkit은 대조군 유지.
 3. **집계**: `pnpm measure:report [--kind=chat|convert]` → 지연시간 분포 + 토큰합 + 비용합 출력, `report.csv` 저장.
 
 ## 측정 기준
