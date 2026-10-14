@@ -11,7 +11,7 @@
  */
 import { spawn } from 'node:child_process';
 
-const LINKS = ['genkit', 'langchain'];
+const LINKS = ['genkit', 'langchain', 'mastra'];
 
 const args = process.argv.slice(2);
 let link = process.env.link ?? process.env.LINK ?? 'genkit';
@@ -31,7 +31,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (!LINKS.includes(link)) {
-  console.error(`[dev] link 값이 잘못됐습니다: "${link}". genkit|langchain 중 하나를 쓰세요. 예: pnpm dev link=langchain`);
+  console.error(`[dev] link 값이 잘못됐습니다: "${link}". genkit|langchain|mastra 중 하나를 쓰세요. 예: pnpm dev link=mastra`);
   process.exit(2);
 }
 
