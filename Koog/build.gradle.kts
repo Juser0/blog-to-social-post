@@ -33,10 +33,17 @@ dependencies {
     implementation("com.rometools:rome:2.1.0")
     implementation("com.rometools:rome-modules:2.1.0")
     implementation("ch.qos.logback:logback-classic:1.5.18")
+    testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.0")
 }
 
 application {
     mainClass.set("com.example.blogtosocial.ApplicationKt")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 tasks.withType<KotlinCompile> {

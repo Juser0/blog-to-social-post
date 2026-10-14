@@ -33,16 +33,18 @@ function toNonNegativeInt(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
 }
 
-/** Genkit/OpenAI 호환 등 제각각인 usage payload를 TokenUsage로 정규화한다. */
+/** Genkit/OpenAI 호환/Koog 등 제각각인 usage payload를 TokenUsage로 정규화한다. */
 export function normalizeUsage(raw: unknown): TokenUsage {
   if (!raw || typeof raw !== 'object') return { ...EMPTY_USAGE };
 
   const record = raw as Record<string, unknown>;
-  const prompt = toNonNegativeInt(record.promptTokens ?? record.inputTokens ?? record.prompt_tokens);
-  const completion = toNonNegativeInt(
-    record.completionTokens ?? record.outputTokens ?? record.completion_tokens,
+  const prompt = toNonNegativeInt(
+    record.promptTokens ?? record.inputTokens ?? record.inputTokensCount ?? record.prompt_tokens,
   );
-  const total = toNonNegativeInt(record.totalTokens ?? record.total_tokens);
+  const completion = toNonNegativeInt(
+    record.completionTokens ?? record.outputTokens ?? record.outputTokensCount ?? record.completion_tokens,
+  );
+  const total = toNonNegativeInt(record.totalTokens ?? record.totalTokensCount ?? record.total_tokens);
 
   return {
     promptTokens: prompt,

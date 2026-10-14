@@ -99,6 +99,19 @@ function parseArgs(): {
   delayMs: number;
 } {
   const args = process.argv.slice(2);
+  return parseArgsFrom(args);
+}
+
+function parseArgsFrom(args: string[]): {
+  rounds: number;
+  links: string[];
+  skipConvert: boolean;
+  model?: string;
+  maxTokens: number;
+  transport: 'direct' | 'http';
+  baseUrl: string;
+  delayMs: number;
+} {
   const get = (name: string): string | undefined => {
     const found = args.find((a) => a === `--${name}` || a.startsWith(`--${name}=`));
     if (!found) return undefined;
@@ -139,9 +152,9 @@ function toUsage(raw: unknown): TokenUsage {
   if (!raw || typeof raw !== 'object') return emptyUsage();
   const r = raw as Record<string, unknown>;
   const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
-  const prompt = num(r.promptTokens ?? r.inputTokens ?? r.prompt_tokens);
-  const completion = num(r.completionTokens ?? r.outputTokens ?? r.completion_tokens);
-  const total = num(r.totalTokens ?? r.total_tokens);
+  const prompt = num(r.promptTokens ?? r.inputTokens ?? r.inputTokensCount ?? r.prompt_tokens);
+  const completion = num(r.completionTokens ?? r.outputTokens ?? r.outputTokensCount ?? r.completion_tokens);
+  const total = num(r.totalTokens ?? r.totalTokensCount ?? r.total_tokens);
   return { promptTokens: prompt, completionTokens: completion, totalTokens: total > 0 ? total : prompt + completion };
 }
 
@@ -293,7 +306,73 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+/**
+ * 쿼터 소모 없는 자체 테스트. 네트워크·모델 호출 없이 인자 파싱과 usage 정규화만 검증한다.
+ * 사용법: node --experimental-strip-types scripts/benchmark.ts --self-test
+ */
+export function selfTest(): void {
+  let failures = 0;
+  const check = (condition: boolean, name: string, detail?: unknown) => {
+    if (condition) {
+      console.log(`OK ${name}`);
+    } else {
+      failures += 1;
+      console.log(`FAIL ${name}${detail !== undefined ? `: ${JSON.stringify(detail)}` : ''}`);
+    }
+  };
+
+  const defaults = parseArgsFrom([]);
+  check(defaults.rounds === 3 && defaults.transport === 'direct', '기본값: 3라운드·direct', defaults);
+  check(
+    JSON.stringify(defaults.links) === JSON.stringify([...LINK_NAMES]),
+    '기본값: 4 link 전부',
+    defaults.links,
+  );
+
+  const picked = parseArgsFrom(['--rounds=5', '--links=mastra,tanstack', '--skip-convert']);
+  check(picked.rounds === 5 && picked.skipConvert, 'rounds·skip-convert 파싱', picked);
+  check(JSON.stringify(picked.links) === JSON.stringify(['mastra', 'tanstack']), 'links 파싱', picked.links);
+
+  const http = parseArgsFrom(['--transport=http', '--base-url=http://localhost:8081/', '--links=koog']);
+  check(http.transport === 'http' && http.baseUrl === 'http://localhost:8081', 'http 모드·baseUrl 정규화', http);
+
+  let threw = false;
+  try {
+    parseArgsFrom(['--links=bogus']);
+  } catch {
+    threw = true;
+  }
+  check(threw, '잘못된 link는 throw');
+
+  check(
+    JSON.stringify(toUsage({ promptTokens: 28, completionTokens: 22, totalTokens: 50 })) ===
+      JSON.stringify({ promptTokens: 28, completionTokens: 22, totalTokens: 50 }),
+    'toUsage 직접 전달',
+  );
+  check(
+    JSON.stringify(toUsage({ inputTokensCount: 1, outputTokensCount: 2 })) ===
+      JSON.stringify({ promptTokens: 1, completionTokens: 2, totalTokens: 3 }),
+    'toUsage Koog형 + total 폴백',
+  );
+  check(
+    JSON.stringify(toUsage(undefined)) ===
+      JSON.stringify({ promptTokens: 0, completionTokens: 0, totalTokens: 0 }),
+    'toUsage 없음은 0',
+  );
+
+  if (failures > 0) {
+    console.log(`FAIL ${failures}건`);
+    process.exitCode = 1;
+  } else {
+    console.log('benchmark 자체 테스트 전체 통과 (쿼터 소모 없음)');
+  }
+}
+
+if (process.argv.slice(2).includes('--self-test')) {
+  selfTest();
+} else {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

@@ -49,6 +49,21 @@ check(
 );
 const empty = normalizeUsage(undefined);
 check(empty.totalTokens === 0 && empty.promptTokens === 0, 'usage 없음은 0', empty);
+check(
+  JSON.stringify(normalizeUsage({ promptTokens: 28, completionTokens: 22, totalTokens: 50 })) ===
+    JSON.stringify({ promptTokens: 28, completionTokens: 22, totalTokens: 50 }),
+  'usage TanStack형(직접 전달)',
+);
+check(
+  JSON.stringify(normalizeUsage({ inputTokensCount: 28, outputTokensCount: 22, totalTokensCount: 50 })) ===
+    JSON.stringify({ promptTokens: 28, completionTokens: 22, totalTokens: 50 }),
+  'usage Koog형(*Count)',
+);
+check(
+  JSON.stringify(normalizeUsage({ inputTokens: 58, outputTokens: 27 })) ===
+    JSON.stringify({ promptTokens: 58, completionTokens: 27, totalTokens: 85 }),
+  'usage Mastra/AI SDK형 + total 폴백',
+);
 
 // 비용: free 모델 0, 미등록 모델 null
 check(

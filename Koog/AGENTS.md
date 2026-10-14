@@ -9,6 +9,7 @@
 
 ```bash
 # Java 22 필요 (Gradle 툴체인)
+./gradlew test            # 순수 로직 테스트 (키 불필요)
 ./gradlew build           # 빌드
 OPENROUTER_API_KEY=sk-or-... ./gradlew run   # http://localhost:8081 (+ 수동 테스트용 / 페이지)
 ```

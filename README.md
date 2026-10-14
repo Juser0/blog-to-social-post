@@ -47,6 +47,25 @@ flowchart LR
 2. **쏘기**: `cd Next && pnpm dev link=genkit` 후 `/api/chat` 호출. 매 호출은 `measurements/<link>.jsonl`에 1줄씩 기록된다.
    일괄 비교는 `pnpm measure:benchmark` (서버 기동 불필요, 위 다이어그램 참조).
 
+## 테스트 (쿼터 소모 없음)
+
+```mermaid
+flowchart TB
+    T1["Next<br/>pnpm test:measure<br/>benchmark --self-test"]
+    T2["SpringAI · Koog<br/>./gradlew test"]
+    T1 & T2 --> Q["순수 로직만 · 외부망·모델 호출 없음"]
+    Q --> H["measure:benchmark<br/>(실측, 쿼터 소모)"]
+```
+
+| 위치 | 명령 | 범위 |
+|---|---|---|
+| Next | `pnpm test:measure` | 분위수·분포 요약·usage 정규화(TS 4종 + Koog형)·단가표·JSONL 기록 |
+| Next | `benchmark --self-test` | 하네스 인자 파싱·toUsage·에러 경로 (네트워크 없음) |
+| SpringAI | `./gradlew test` | 프롬프트 규칙·trim·플랫폼 정규화·본문 추출 parity 11건 |
+| Koog | `./gradlew test` | 동일 10건 (kotlin.test) |
+
+- `test-provider.mts`, 실서버 스모크, 하네스 본실행은 실제 모델을 쏘므로 쿼터를 쓴다. 일상 검증은 위 표만으로 끝낸다.
+
 ## 비교 결과 (예비치, 2026-10-14)
 
 동일 모델(`nvidia/nemotron-3-ultra-550b-a55b:free`)·동일 키, `latencyMs` 실측.
