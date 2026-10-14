@@ -4,7 +4,7 @@
 
 > A Next.js application that lets users select an RSS blog article and convert it to SNS content (LinkedIn, X/Twitter, Instagram cardNews + caption, Reminder). Features paginated feed listing, category filtering, dark/light mode, and per-platform output selection.
 
-> AI 연결부는 부팅 시 `link=` 인자로 고른다: `pnpm dev link=genkit` (기본값), `link=langchain|mastra`.
+> AI 연결부는 부팅 시 `link=` 인자로 고른다: `pnpm dev link=genkit` (기본값), `link=langchain|mastra|tanstack`.
 > 프롬프트·스키마·UI·측정 인프라는 공유하고, `lib/adapters/` (ChatAdapter 계약)만 갈아낀다.
 
 ---
@@ -34,6 +34,7 @@ link=langchain pnpm dev           # env 직접 주입도 가능
 | `genkit` (기본) | `lib/adapters/genkit.ts` | `genkit` + `@genkit-ai/compat-oai` → OpenRouter. 구조화 출력 `ai.generate({output: {schema}})` |
 | `langchain` | `lib/adapters/langchain.ts` | `ChatOpenAI`를 OpenRouter `baseURL`에 직접 연결. 구조화 출력 `withStructuredOutput(schema, {method: 'jsonSchema', includeRaw: true})` |
 | `mastra` | `lib/adapters/mastra.ts` | Mastra `Agent` + `@openrouter/ai-sdk-provider`. 도구 없이 `maxSteps: 1`. 구조화 출력 `generate(…, {structuredOutput: {schema}})` → `object` + `totalUsage` |
+| `tanstack` | `lib/adapters/tanstack.ts` | TanStack AI `chat()` + `@tanstack/ai-openrouter`. 구조화는 스트리밍 1회 호출에서 complete 이벤트 객체 + RUN_FINISHED usage 수집 |
 
 - 계약: `lib/adapters/types.ts` `ChatAdapter` (`chat` 1회 호출, `convertStructured` 1회 호출 — 재시도는 `lib/blog-to-social.ts`가 담당).
 - 선택은 부팅 시 1회 확정된다: `scripts/dev.mjs`가 `link=` 인자를 소비해 `LINK` env로 넘기고,
@@ -65,13 +66,14 @@ link=langchain pnpm dev           # env 직접 주입도 가능
 │   ├── globals.css              # CSS variables, theming, card entrance animations
 │   └── page.tsx                 # Full UI: pagination, category chips, platform toggles, scroll
 ├── lib/                  # Shared logic (no Next.js/app router coupling)
-│   ├── link.ts         # 부팅 시 link 선택 (genkit|langchain|mastra, 잘못된 값이면 throw)
+│   ├── link.ts         # 부팅 시 link 선택 (genkit|langchain|mastra|tanstack, 잘못된 값이면 throw)
 │   ├── adapters/       # ChatAdapter 계약 + 구현 (부팅 시 1회 연결)
 │   │   ├── types.ts    # ChatAdapter 인터페이스 (chat/convertStructured)
 │   │   ├── index.ts    # 활성 어댑터 싱글턴 + MODEL + missingApiKeyReason()
 │   │   ├── genkit.ts   # genkit + compat-oai 구현
 │   │   ├── langchain.ts# ChatOpenAI 직접 연결 구현
-│   │   └── mastra.ts   # Mastra Agent + OpenRouter 프로바이더 구현
+│   │   ├── mastra.ts   # Mastra Agent + OpenRouter 프로바이더 구현
+│   │   └── tanstack.ts # TanStack AI chat() + OpenRouter 어댑터 구현
 │   ├── feed.ts         # RSS parsing, article extraction, category handling
 │   ├── blog-to-social.ts  # convertBlogFlow (일반 async 함수) + 동적 플랫폼 스키마 + 측정
 │   ├── measure.ts      # 측정 요소: usage 정규화, 비용 추정, p50/p95, JSONL 기록 (프레임워크 무의존)
@@ -226,6 +228,11 @@ pnpm dlx tsx scripts/test-feed.ts
   (같은 모델도 genkit 경로에서는 3종 모두 내려옴). 비용 산정에 입·출력 분할이 필요하면 total 기준 안분 등 하네스 규칙이 필요하다.
 - **mastra**: `mastra` 패키지는 CLI 전용이라 `Agent`는 `@mastra/core/agent`에서 가져온다 (직접 의존성으로 둠).
   모델 ID 유니언에 `:free` 모델이 없어 캐스트한다. usage는 `totalUsage`(input/output/totalTokens)를 쓴다.
+- **tanstack**: `chat({outputSchema, stream: false})`는 객체만 돌려주고 usage를 잃으므로,
+  구조화 호출은 스트리밍 1회로 complete 이벤트 객체 + RUN_FINISHED usage를 함께 수집한다.
+  어댑터가 모델에 바인딩되므로 요청마다 `createOpenRouterText`로 만든다. URL 덮어쓰기는 `serverURL`로 한다.
+  zod v3 스키마는 TanStack이 요구하는 `~standard.jsonSchema` 변환기가 없어서
+  `zod-to-json-schema`로 일반 JSON 스키마로 바꿔 넘긴다 (동등한 response_format 1회 호출).
 - **Google-genai unused**: `@genkit-ai/google-genai` is still in `package.json` deps but no longer imported. Uninstall if desired: `pnpm remove @genkit-ai/google-genai`.
 - **Platform validation**: Convert button is disabled when `platforms.length === 0`. Selecting "전체 선택" re-checks all 4.
 - **Instagram cardNews + caption**: Always a pair; cannot select one without the other.
@@ -238,6 +245,7 @@ pnpm dlx tsx scripts/test-feed.ts
 - `pnpm dev link=genkit --port 3100` → `GET /` 200, `POST /api/chat` 200 (`link: genkit`), `measurements/genkit.jsonl` 기록 ✅
 - `pnpm dev link=langchain --port 3101` → `GET /` 200, `POST /api/chat` 200 (`link: langchain`), `measurements/langchain.jsonl` 기록 ✅
 - `pnpm dev link=mastra --port 3100` → `POST /api/chat` 200 (`link: mastra`, usage 3종 완전), `POST /api/convert` 200 (구조화·usage 완전) ✅
+- `pnpm dev link=tanstack --port 3100` → `POST /api/chat` 200 (`link: tanstack`, usage 3종 완전), `POST /api/convert` 200 (구조화·usage 완전) ✅
 - `pnpm dev link=bogus` → exit 2 + 사용법 에러 (서버 미기동) ✅
 - Browser test (구 GenKit 시절): platform toggle, category filter, scroll-to-result, animation stagger, warning when no platform selected
 

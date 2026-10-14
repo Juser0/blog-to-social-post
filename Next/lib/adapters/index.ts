@@ -2,16 +2,23 @@ import { LINK } from '../link.ts';
 import { genkitAdapter } from './genkit.ts';
 import { langchainAdapter } from './langchain.ts';
 import { mastraAdapter } from './mastra.ts';
+import { tanstackAdapter } from './tanstack.ts';
 import type { ChatAdapter } from './types.ts';
 
 export type { ChatAdapter } from './types.ts';
 
 /**
- * 부팅 시 1회 확정되는 활성 어댑터. `pnpm dev link=genkit|langchain|mastra`으로 고른다.
+ * 부팅 시 1회 확정되는 활성 어댑터. `pnpm dev link=genkit|langchain|mastra|tanstack`으로 고른다.
  * 라우트·플로우는 이 싱글턴만 보고, 프레임워크별 코드는 adapters/ 안에 격리된다.
  */
 export const adapter: ChatAdapter =
-  LINK === 'langchain' ? langchainAdapter : LINK === 'mastra' ? mastraAdapter : genkitAdapter;
+  LINK === 'langchain'
+    ? langchainAdapter
+    : LINK === 'mastra'
+      ? mastraAdapter
+      : LINK === 'tanstack'
+        ? tanstackAdapter
+        : genkitAdapter;
 
 /** 활성 어댑터의 기본 모델 ID (OPENROUTER_MODEL 미지정 시). */
 export const MODEL = adapter.model;
