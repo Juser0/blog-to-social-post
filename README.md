@@ -38,6 +38,21 @@ flowchart LR
    재시도 없이 1회 호출이 원칙 (순수 연결 성능 측정). 기준 구현: `Next/` (스펙 상세는 [`Next/AGENTS.md`](./Next/AGENTS.md)).
 2. **쏘기**: `cd Next && pnpm dev link=genkit` 후 `/api/chat` 호출. 매 호출은 `measurements/<link>.jsonl`에 1줄씩 기록된다.
    일괄 비교는 `pnpm measure:benchmark` (서버 기동 불필요, 위 다이어그램 참조).
+
+## 비교 결과 (예비치, 2026-10-14)
+
+동일 모델(`nvidia/nemotron-3-ultra-550b-a55b:free`)·동일 키, 서버 측 `latencyMs` 실측.
+표본이 적고 무료 티어 편차가 크므로 확정치가 아니라 경향치로 볼 것.
+
+| link | chat latency | convert latency | usage 분해 | 비고 |
+|---|---|---|---|---|
+| genkit | 56,576ms (n=1) | p50 39,170ms (n=7) | 3종 완전 | 구조화 검증 내장, 의존 최중량 |
+| langchain | p50 897ms (n=2) | p50 71,030ms (n=2) | total만 (`:free` 한계) | 가볍고 안정, 출력 미검증 |
+| mastra | 5,110ms (n=1) | 16,370ms (n=1) | 3종 완전 | `maxSteps: 1` 1회 호출, 의존 무거움 |
+| tanstack | 1,089ms (n=1) | 5,746ms (n=1) | 3종 완전 | 가장 빠름, RC 버전·zod v3 변환 필요 |
+
+- 비용은 전부 `costUsd=0` (무료 모델).
+- 확정 비교는 `pnpm measure:benchmark --rounds=10` (프롬프트 고정·라운드로빈) 후 p50/p95으로 판정.
 3. **집계**: `pnpm measure:report [--kind=chat|convert]` → 지연시간 분포 + 토큰합 + 비용합 출력, `report.csv` 저장.
 
 ## 측정 기준
