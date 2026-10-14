@@ -6,11 +6,9 @@
 
 | 폴더 | 내용 | 상태 |
 |---|---|---|
-| `Next/` | Next.js 통합 구현. 부팅 시 `link=genkit\|langchain`으로 AI 연결 선택 (구 `GenKit/`, 이력 유지) | 동작 검증됨 — 상세는 `Next/AGENTS.md` |
+| `Next/` | Next.js 통합 구현. 부팅 시 `link=genkit\|langchain\|mastra\|tanstack`으로 AI 연결 선택 (구 `GenKit/`, 이력 유지) | 동작 검증됨 — 상세는 `Next/AGENTS.md` |
 | `Koog/` | Kotlin + JetBrains Koog (JVM/Gradle, pnpm 대상 아님) | 미구현 |
 | `SpringAI/` | Java + Spring AI (JVM/Maven 또는 Gradle, pnpm 대상 아님) | 미구현 |
-| `TanstackAI/` | TanStack 기반 (스택 정의 필요) | 미구현 |
-| `MastraAI/` | TypeScript + Mastra (Agent/Tool/Workflow) | 미구현 |
 
 ## 공통 규칙
 
@@ -29,5 +27,5 @@ cd Next
 pnpm install
 pnpm typecheck
 pnpm dev link=genkit                # 기본 (http://localhost:3000)
-pnpm dev link=langchain --port 3100  # 동시 실행 시
+pnpm dev link=mastra --port 3100    # genkit|langchain|mastra|tanstack 중 선택
 ```
