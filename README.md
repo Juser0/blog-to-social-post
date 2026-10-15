@@ -7,6 +7,40 @@ Write Social Network Service(SNS) Article based Blog Article.
 - [`SpringAI/`](./SpringAI/README.md) — Kotlin + Spring AI 구현 (동작 검증됨, JVM/Gradle, pnpm 대상 아님)
 - [`Koog/`](./Koog/README.md) — Kotlin + JetBrains Koog 구현 (동작 검증됨, JVM/Gradle, pnpm 대상 아님)
 
+## How to Use
+
+전제: OpenRouter 키 1개 ([발급](https://openrouter.ai/keys)). 무료 모델(`:free`) 기준 일일 50회 제한이 있어 측정은 나눠서 실행한다.
+
+| 쓰고 싶은 것 | 실행 |
+|---|---|
+| 웹 UI (4종 연결 전환) | `cd Next && pnpm install` 후 `.env.local`에 키 저장 → `pnpm dev link=genkit` → http://localhost:3000 (연결 변경은 `link=langchain\|mastra\|tanstack`, 상세: [`Next/README.md`](./Next/README.md)) |
+| SpringAI API 서버 | `cd SpringAI && OPENROUTER_API_KEY=sk-or-... ./gradlew bootRun` → http://localhost:8080 (상세: [`SpringAI/README.md`](./SpringAI/README.md)) |
+| Koog 서버 (+ 수동 테스트 페이지) | `cd Koog && OPENROUTER_API_KEY=sk-or-... ./gradlew run` → http://localhost:8081 (상세: [`Koog/README.md`](./Koog/README.md)) |
+
+웹 UI 사용 순서:
+
+1. 블로그 URL 입력 (예: `justuser.tistory.com`) → 글 목록 조회
+2. 변환할 글 선택 (페이지 이동·카테고리 필터 지원)
+3. 만들 플랫폼 선택 (LinkedIn·X·Instagram·Reminder, 미선택 시 해당 출력 생략)
+4. 변환 → 플랫폼별 카드로 결과 확인 ("원본 응답 보기"는 dev 모드 표시)
+
+API로 바로 쓰기 (JVM 서버·Next dev 서버 공통 계약):
+
+```bash
+# 가벼운 연결 확인 (재시도 없음, 1회 호출)
+curl -X POST http://localhost:8080/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt": "스케줄러 요약 테스트: 오늘 할 일을 3줄로 요약해줘"}'
+
+# 실물 글 변환 (일시 오류만 3회 재시도)
+curl -X POST http://localhost:8080/api/convert \
+  -H 'Content-Type: application/json' \
+  -d '{"blogUrl": "justuser.tistory.com", "platforms": ["remember"]}'
+```
+
+일괄 비교는 `cd Next && pnpm measure:benchmark --rounds=1 --skip-convert`
+(쿼터 절약형. 전체 옵션은 [`Next/AGENTS.md`](./Next/AGENTS.md) 하네스 절).
+
 ## 구조 다이어그램
 
 ```mermaid
