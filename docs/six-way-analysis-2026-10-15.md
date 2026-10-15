@@ -127,5 +127,24 @@ koog는 baseURL 중복(`/api/v1`)·Kotlin 2.3 메타데이터 우회 등 발판 
   프롬프트 지시(springai/koog) 모두 remember 단일 필드에서는 실패율 0.
 - 제품 경로 후보 (변동 없음): tanstack(속도+측정 완전, 구현 우회로가 대가) 또는 mastra(검증+측정+생태계).
   genkit은 기준선 유지. JVM 2종은 실물 경로 검증됨 — RSS 연동 편의성은 Spring AI(Rome 동일, 설정 중복 주의)가 Koog보다 낮음.
-- 다음 단계: 쿼터 회복 후 `rounds=5` 하네스 재측정 (chat 동일조건 90회 → 50 상한 초과이므로
-  `--skip-convert` + convert 별도 6회 등 분할 실행 필요).
+## 6. rounds=5 재측정 경과 (2026-10-15 슬라이스 1)
+
+50회/일 상한 때문에 분할 실행한다. 소요량: TS 4종 80회 + JVM 2종 40회.
+
+- 슬라이스 1 (금일): TS 4종 `rounds=2` → **32/32 성공, 실패 0**. 금일 누적 48/50이라 여기서 중단.
+- 예정: 슬라이스 2 (명일) TS 4종 `rounds=3` 48회 → TS 5라운드 완성.
+  슬라이스 3 (모레) JVM 2종 `rounds=5` 40회 (서버 재기동 필요 — 금일 종료 시점에 둘 다 내려가 있음).
+
+### 슬라이스 1 결과 (`benchmark-2026-10-15T04-00-02Z`, chat 6/6·convert 2/2 전부 성공)
+
+| link | chat p50 / p95 (n=6) | convert p50 (n=2) | 비고 |
+|---|---|---|---|
+| genkit | 3,108 / 5,120ms | 12,055ms | 드디어 정상 표본 확보 (env 버그 수정 후 첫 성공 रन) |
+| langchain | 1,520 / 8,398ms | 2,079ms | chat 가장 빠름. usage는 total-only 여전 |
+| mastra | 4,160 / 7,348ms | 13,859ms | |
+| tanstack | 2,217 / 4,539ms | 2,259ms | convert가 genkit의 1/5 |
+
+- 실패 0, 429 0. 호출 간 3초 간격이 유효했던 것으로 보임.
+- tanstack convert 2.3초 vs genkit 12초 — 합성지문 동일 조건이라 직접 비교 가능. 구조화 경로에서는 tanstack이 압도적.
+- langchain chat p50 1.5초로 1위지만 usage 분해 결함은 여전 (비용 비교 불가).
+- genkit chat이 10-14 스모크(56초) 대비 정상화. 역시 n=1은 믿을 게 못 됨.
